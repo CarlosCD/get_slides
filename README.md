@@ -1,8 +1,12 @@
 ## Get Slides
 
-This program gets a series of images from a website, all with a particular format (prefix+number+sufix). Then it appends a HTML navigation page for each image, which includes the images.
+This program gets a series of files from a website, assuming a particular format (prefix+number+sufix).
 
-The idea was to download slides from a presentation online which used a similar structure, namely a presentation from Matz at OSCON 2003: <http://www.rubyist.net/~matz/slides/oscon2003/index.html>
+The idea was to download slides from a presentation online which uses this structure, a presentation from Matz at OSCON 2003: <http://www.rubyist.net/~matz/slides/oscon2003/index.html>
+
+The script uses Threads. MRI allows parallelism on IO (even multicore), but assumes the GIL to compile the results of each Thread (lock to allow atomicity on Array#<<). So MRI has several advantages with this approach.
+
+Tested with MRI Ruby 2.2.0.
 
 ### Usage
 
@@ -16,10 +20,10 @@ Where -V means verbose (optional).
     ./get_slides.rb http://www.rubyist.net/~matz/slides/oscon2003/ temp
     ./get_slides.rb http://www.rubyist.net/~matz/slides/rc2002/ Matz-2002-RC-Be_Minor_Be_Cool -V
     ./get_slides.rb http://www.rubyist.net/~matz/slides/kyrgyz/ ../slides/Matz-2006-kyrgyz-Ruby_The_Object-Oriented_Language -V
-    ./get_slides.rb http://www.rubyist.net/~matz/slides/rc2001-a/ ~/Downloads/Matz_slides/Matz-2001-rc-Human-Oriented_Programming_in_Ruby -V
+    ./get_slides.rb http://www.rubyist.net/~matz/slides/rc2005/ ~/Downloads/Matz_slides/Matz-2005-RubyConf-Visions_for_the_Future -V
 
 ### Note
 
-  So far it is a bare bones program, with minimal error control on the arguments passed
+  It is so far a barebones program, with minimal error control on the arguments passed. A fast and dirty hack.
 
 February 2015

@@ -7,25 +7,31 @@ module GetSlides
 
   class << self
 
-    # Default asumes (at least for now) that the images are "#{site_url}mgp#{number}.jpg" where number is of the form 00001, 00002
     def get_images(site_url, destination_folder, options = {})
       # Options:
+      # Default asumes (at least for now) that the files are "#{site_url}mgp#{number}.jpg"... where number is of the form 00001, 00002
       options = default_options.merge options
       verbose = options[:verbose]
       zero_padding = options[:zero_padding]  # Number padding. i.e, if zero_padding==4, it generates 0001, 0002...
       file_prefix = options[:prefix]
       file_sufixes = options[:sufix]
-      file_sufixes = *file_sufixes           # In case it was pased one string, it becomes an Array of sufixes
+      file_sufixes = *file_sufixes           # If it was passed only a string, it becomes an Array of sufixes
 
       slide_num = 1
-      keep_downloading = true
-      while keep_downloading do
-        downloads = file_sufixes.select do |sufix|
+      keep_going = true
+      while keep_going do
+        # Create threads:
+        results_array = []  # To get the Threads final results. Thanks GIL!
+        threads = []
+        file_sufixes.each_with_index do |sufix|
           file_name = "#{file_prefix}#{slide_num.to_s.rjust(zero_padding, '0')}#{sufix}"
-          download_and_save(site_url, file_name, destination_folder, verbose)
+          threads << Thread.new{ download_and_save(site_url, file_name, destination_folder, results_array, verbose) }
         end
-        keep_downloading = downloads.any?
-        slide_num += 1 if keep_downloading
+        # Make them work:
+        threads.each(&:join)
+        # And check the final result, if any thread succeeded, then it is a success (at least one file was there):
+        keep_going = results_array.any?
+        slide_num += 1 if keep_going
       end
       # create index.html as the first slide:
       if slide_num > 1
@@ -44,14 +50,12 @@ module GetSlides
         sufix: [ '.html', '.jpg', '.txt' ] }
     end
 
-    def download_and_save(url, file_name, destination_folder, verbose = false)
+    def download_and_save(url, file_name, destination_folder, results_array, verbose = false)
       file_url = "#{url}#{file_name}"
       file_content = download_file(file_url, verbose) # Get response body (could be binary), return nil if it doesn't exist
       if file_content
         save_file(destination_folder, file_name, file_content, verbose)
-        true
-      else
-        false
+        results_array << true
       end
     end
 
